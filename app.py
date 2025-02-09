@@ -47,13 +47,13 @@ def create_word_document(chapters, title):
 
 # Configuración de Streamlit
 st.set_page_config(
-    page_title="Generador de automático de libros",
+    page_title="Generador automático de libros",
     page_icon="📚",  # Ícono para la pestaña del navegador
     layout="wide"
 )
 
 # Título con ícono
-st.title("📚 Generador de Libros Automático")
+st.title("📚 Generador automático de libros")
 
 # Barra lateral con instrucciones y anuncio
 st.sidebar.header("📖 ¿Cómo funciona esta app?")
