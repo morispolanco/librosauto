@@ -49,7 +49,6 @@ def create_word_document(chapters, title):
 st.set_page_config(
     page_title="Generador Automático de Libros",
     page_icon="📚",  # Ícono para la pestaña del navegador
-    layout="wide"
 )
 
 # Título con ícono
