@@ -18,7 +18,7 @@ def generate_chapter(api_key, topic, audience, chapter_number):
         "Content-Type": "application/json"
     }
     data = {
-        "model": "qwen-plus",
+        "model": "qwen-turbo",
         "messages": [
             {"role": "system", "content": "Eres un asistente útil que escribe en español."},
             {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."}
