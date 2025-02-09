@@ -66,11 +66,10 @@ Esta aplicación genera automáticamente libros de no ficción en formato `.docx
 4. Haz clic en "Generar Libro".
 5. Descarga el archivo generado.
 
-**Nota:** Los capítulos se generan automáticamente con aproximadamente 2000-2500 palabras cada uno.
 """)
 st.sidebar.markdown("""
 ---
-**📝 ¿Necesitas corrección de textos?**  
+**📝 Corrección de textos en 24 horas**  
 👉 [Hablemos Bien](https://hablemosbien.org)
 """)
 
@@ -99,7 +98,7 @@ if st.button("🚀 Generar Libro"):
         chapter_content = generate_chapter(api_key, topic, audience, i)
         word_count = len(chapter_content.split())  # Contar palabras
         chapters.append(chapter_content)
-        with st.expander(f"챕 Capítulo {i} ({word_count} palabras)"):
+        with st.expander(f" Capítulo {i} ({word_count} palabras)"):
             st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
     
