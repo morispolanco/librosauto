@@ -82,7 +82,7 @@ api_key = st.secrets["DASHSCOPE_API_KEY"]
 # Entradas del usuario
 topic = st.text_input("📒 Tema del libro:")
 audience = st.text_input("🎯 Audiencia objetivo:")
-num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=20, value=5)
+num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=15, value=5)
 
 # Validación de entradas
 if st.button("🚀 Generar Libro"):
