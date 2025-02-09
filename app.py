@@ -21,7 +21,7 @@ def generate_chapter(api_key, topic, audience, chapter_number):
         "model": "qwen-plus",
         "messages": [
             {"role": "system", "content": "Eres un asistente útil que escribe en español."},
-            {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."}
+            {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 1200-2000 palabras en español."}
         ]
     }
     try:
@@ -66,13 +66,12 @@ Esta aplicación genera automáticamente un libro en formato `.docx` basado en u
 4. Haz clic en "Generar Libro".
 5. Descarga el archivo generado.
 
-**Nota:** Los capítulos se generan automáticamente con aproximadamente 2000-2500 palabras cada uno.
+**Nota:** Los capítulos se generan automáticamente con aproximadamente 1200-2000 palabras cada uno.
 """)
 st.sidebar.markdown("""
 ---
 **📝 ¿Necesitas corrección de textos?**  
-Obtén corrección profesional en menos de 24 horas:  
-👉 [Corrección de textos en 24 horas](https://hablemosbien.org)
+👉 [Hablemos Bien](https://hablemosbien.org)
 """)
 
 # Validación de claves secretas
@@ -98,8 +97,9 @@ if st.button("🚀 Generar Libro"):
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generando capítulo {i}...")
         chapter_content = generate_chapter(api_key, topic, audience, i)
+        word_count = len(chapter_content.split())  # Contar palabras
         chapters.append(chapter_content)
-        with st.expander(f"챕 Capítulo {i}"):
+        with st.expander(f"챕 Capítulo {i} ({word_count} palabras)"):
             st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
     
@@ -112,9 +112,9 @@ if st.button("🚀 Generar Libro"):
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# Pie de página mejorado
+# Pie de página simplificado
 st.markdown("""
     <footer style='text-align: center; padding: 10px; background-color: #f8f9fa; border-top: 1px solid #ddd;'>
-        <a href='https://hablemosbien.org' target='_blank' style='color: #007bff; text-decoration: none;'>Copyright Hablemos bien</a>
+        <a href='https://hablemosbien.org' target='_blank' style='color: #007bff; text-decoration: none;'>Hablemos Bien</a>
     </footer>
 """, unsafe_allow_html=True)
