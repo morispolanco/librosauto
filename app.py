@@ -21,7 +21,7 @@ def generate_chapter(api_key, topic, audience, chapter_number):
         "model": "qwen-plus",
         "messages": [
             {"role": "system", "content": "Eres un asistente útil que escribe en español."},
-            {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 1200-2000 palabras en español."}
+            {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."}
         ]
     }
     try:
@@ -47,7 +47,7 @@ def create_word_document(chapters, title):
 
 # Configuración de Streamlit
 st.set_page_config(
-    page_title="Generador automático de libros",
+    page_title="Generador Automático de Libros",
     page_icon="📚",  # Ícono para la pestaña del navegador
     layout="wide"
 )
@@ -58,7 +58,7 @@ st.title("📚 Generador automático de libros")
 # Barra lateral con instrucciones y anuncio
 st.sidebar.header("📖 ¿Cómo funciona esta app?")
 st.sidebar.markdown("""
-Esta aplicación genera automáticamente un libro en formato `.docx` basado en un tema y una audiencia específica.  
+Esta aplicación genera automáticamente libros de no ficción en formato `.docx` basados en un tema y una audiencia específica.  
 **Pasos para usarla:**
 1. Introduce el tema del libro.
 2. Especifica a quién va dirigido.
@@ -66,7 +66,7 @@ Esta aplicación genera automáticamente un libro en formato `.docx` basado en u
 4. Haz clic en "Generar Libro".
 5. Descarga el archivo generado.
 
-**Nota:** Los capítulos se generan automáticamente con aproximadamente 1200-2000 palabras cada uno.
+**Nota:** Los capítulos se generan automáticamente con aproximadamente 2000-2500 palabras cada uno.
 """)
 st.sidebar.markdown("""
 ---
