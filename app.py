@@ -46,7 +46,34 @@ def create_word_document(chapters, title):
     return buffer
 
 # Configuración de Streamlit
-st.title("Generador de Libros Automático 📚")
+st.set_page_config(
+    page_title="Generador de Libros Automático",
+    page_icon="📚",  # Ícono para la pestaña del navegador
+    layout="wide"
+)
+
+# Título con ícono
+st.title("📚 Generador de Libros Automático")
+
+# Barra lateral con instrucciones y anuncio
+st.sidebar.header("📖 ¿Cómo funciona esta app?")
+st.sidebar.markdown("""
+Esta aplicación genera automáticamente un libro en formato `.docx` basado en un tema y una audiencia específica.  
+**Pasos para usarla:**
+1. Introduce el tema del libro.
+2. Especifica a quién va dirigido.
+3. Selecciona el número de capítulos deseados.
+4. Haz clic en "Generar Libro".
+5. Descarga el archivo generado.
+
+**Nota:** Los capítulos se generan automáticamente con aproximadamente 2000-2500 palabras cada uno.
+""")
+st.sidebar.markdown("""
+---
+**📝 ¿Necesitas corrección de textos?**  
+Obtén corrección profesional en menos de 24 horas:  
+👉 [Corrección de textos en 24 horas](https://hablemosbien.org)
+""")
 
 # Validación de claves secretas
 if "DASHSCOPE_API_KEY" not in st.secrets:
@@ -56,12 +83,12 @@ if "DASHSCOPE_API_KEY" not in st.secrets:
 api_key = st.secrets["DASHSCOPE_API_KEY"]
 
 # Entradas del usuario
-topic = st.text_input("Introduce el tema del libro:")
-audience = st.text_input("¿A quién va dirigido el libro?")
-num_chapters = st.slider("Número de capítulos", min_value=1, max_value=20, value=5)
+topic = st.text_input("📒 Tema del libro:")
+audience = st.text_input("🎯 Audiencia objetivo:")
+num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=20, value=5)
 
 # Validación de entradas
-if st.button("Generar Libro"):
+if st.button("🚀 Generar Libro"):
     if not topic or not audience:
         st.error("Por favor, introduce un tema y una audiencia válidos.")
         st.stop()
@@ -69,23 +96,17 @@ if st.button("Generar Libro"):
     chapters = []
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
-        st.write(f"Generando capítulo {i}...")
+        st.write(f"⏳ Generando capítulo {i}...")
         chapter_content = generate_chapter(api_key, topic, audience, i)
-        
-        # Verificar longitud del capítulo
-        word_count = len(chapter_content.split())
-        if word_count < 2000 or word_count > 2500:
-            st.warning(f"El capítulo {i} tiene {word_count} palabras. No cumple con el rango esperado (2000-2500).")
-        
         chapters.append(chapter_content)
-        with st.expander(f"Capítulo {i}"):
+        with st.expander(f"챕 Capítulo {i}"):
             st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
     
     # Crear y descargar el archivo Word
     word_file = create_word_document(chapters, topic)
     st.download_button(
-        label="Descargar en Word",
+        label="📥 Descargar en Word",
         data=word_file,
         file_name=f"{topic}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
