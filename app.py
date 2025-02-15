@@ -8,12 +8,47 @@ from docx.oxml import OxmlElement
 from io import BytesIO
 import re
 from ebooklib import epub
+from hyphenate import hyphenate_word  # Biblioteca para división automática de palabras
 
 # Función para limpiar Markdown
 def clean_markdown(text):
     """Elimina marcas de Markdown del texto."""
     text = re.sub(r'[#*_`]', '', text)  # Eliminar caracteres especiales de Markdown
     return text.strip()
+
+# Función para aplicar reglas de capitalización según el idioma
+def format_title(title, language):
+    """
+    Formatea el título según las reglas gramaticales del idioma.
+    - Español: Solo mayúscula inicial en la primera palabra y nombres propios.
+    - Otros idiomas: Mayúscula inicial en cada palabra.
+    """
+    if language.lower() == "spanish":
+        # Dividir el título en palabras
+        words = title.split()
+        # Mantener mayúscula inicial solo en la primera palabra y nombres propios
+        formatted_words = [words[0].capitalize()] + [word.lower() for word in words[1:]]
+        return " ".join(formatted_words)
+    else:
+        # Capitalizar cada palabra para otros idiomas
+        return title.title()
+
+# Función para dividir palabras automáticamente
+def auto_hyphenate_paragraph(paragraph_text, language):
+    """
+    Divide las palabras largas en un párrafo según las reglas del idioma.
+    """
+    words = paragraph_text.split()
+    hyphenated_words = []
+    for word in words:
+        try:
+            # Intentar dividir la palabra usando hyphenate_word
+            hyphenated_word = "-".join(hyphenate_word(word, language))
+            hyphenated_words.append(hyphenated_word)
+        except Exception:
+            # Si falla, mantener la palabra original
+            hyphenated_words.append(word)
+    return " ".join(hyphenated_words)
 
 # Función para generar un capítulo
 def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", is_intro=False, is_conclusion=False):
@@ -68,7 +103,7 @@ def add_page_numbers(doc):
         run._r.append(fldChar2)
 
 # Función para crear un documento Word con formato específico
-def create_word_document(chapters, title, author_name, author_bio):
+def create_word_document(chapters, title, author_name, author_bio, language):
     doc = Document()
 
     # Configurar el tamaño de página (5.5 x 8.5 pulgadas)
@@ -82,10 +117,11 @@ def create_word_document(chapters, title, author_name, author_bio):
     section.left_margin = Inches(0.8)
     section.right_margin = Inches(0.8)
 
-    # Añadir título
+    # Añadir título formateado según el idioma
+    formatted_title = format_title(title, language)
     title_paragraph = doc.add_paragraph()
     title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
-    title_run = title_paragraph.add_run(title)
+    title_run = title_paragraph.add_run(formatted_title)
     title_run.bold = True
     title_run.font.size = Pt(14)
     title_run.font.name = "Times New Roman"
@@ -110,8 +146,10 @@ def create_word_document(chapters, title, author_name, author_bio):
 
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
-        # Añadir encabezado del capítulo
-        chapter_title = doc.add_paragraph(f"Chapter {i}")
+        # Añadir encabezado del capítulo formateado según el idioma
+        chapter_title_text = f"Chapter {i}" if language.lower() != "spanish" else f"Capítulo {i}"
+        formatted_chapter_title = format_title(chapter_title_text, language)
+        chapter_title = doc.add_paragraph(formatted_chapter_title)
         chapter_title.style = "Heading 1"
         chapter_title.runs[0].font.size = Pt(12)
         chapter_title.runs[0].font.name = "Times New Roman"
@@ -119,7 +157,9 @@ def create_word_document(chapters, title, author_name, author_bio):
         # Dividir el contenido del capítulo en párrafos
         paragraphs = chapter.split("\n")
         for paragraph_text in paragraphs:
-            paragraph = doc.add_paragraph(paragraph_text.strip())  # Crear un nuevo párrafo
+            # Aplicar división automática de palabras
+            hyphenated_paragraph = auto_hyphenate_paragraph(paragraph_text.strip(), language)
+            paragraph = doc.add_paragraph(hyphenated_paragraph)  # Crear un nuevo párrafo
             paragraph.style = "Normal"
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
             paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
@@ -279,7 +319,7 @@ if st.button("🚀 Generate Book"):
 # Mostrar opciones de descarga si hay capítulos generados
 if st.session_state.chapters:
     st.subheader("⬇️ Download Options")
-    word_file = create_word_document(st.session_state.chapters, topic, author_name, author_bio)
+    word_file = create_word_document(st.session_state.chapters, topic, author_name, author_bio, selected_language.lower())
     epub_file = create_epub_document(st.session_state.chapters, topic, author_name, author_bio)
 
     st.download_button(
@@ -295,3 +335,10 @@ if st.session_state.chapters:
         file_name=f"{topic}.epub",
         mime="application/epub+zip"
     )
+
+# Pie de página simplificado
+st.markdown("""
+    <footer style='text-align: center; padding: 10px; background-color: #f8f9fa; border-top: 1px solid #ddd;'>
+        <a href='https://hablemosbien.org' target='_blank' style='color: #007bff; text-decoration: none;'>Hablemos Bien</a>
+    </footer>
+""", unsafe_allow_html=True)
