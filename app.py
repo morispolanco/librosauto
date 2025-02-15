@@ -3,6 +3,7 @@ import requests
 from docx import Document
 from io import BytesIO
 import re
+from ebooklib import epub
 
 # Función para limpiar Markdown
 def clean_markdown(text):
@@ -97,6 +98,37 @@ def create_html_document(chapters, title):
     """
     return html_content.encode('utf-8')
 
+# Función para crear un archivo eBook (.epub)
+def create_epub_document(chapters, title):
+    book = epub.EpubBook()
+
+    # Metadatos del eBook
+    book.set_identifier('id123456')
+    book.set_title(title)
+    book.set_language('es')
+    book.add_author('Generador Automático de Libros')
+
+    # Crear capítulos
+    epub_chapters = []
+    for i, chapter in enumerate(chapters, 1):
+        c = epub.EpubHtml(title=f'Capítulo {i}', file_name=f'chap_{i}.xhtml', lang='es')
+        c.content = f"<h1>Capítulo {i}</h1><p>{chapter}</p>"
+        book.add_item(c)
+        epub_chapters.append(c)
+
+    # Definir tabla de contenido
+    book.toc = tuple(epub_chapters)
+
+    # Agregar navegación
+    book.add_item(epub.EpubNcx())
+    book.add_item(epub.EpubNav())
+
+    # Guardar el eBook en memoria
+    buffer = BytesIO()
+    epub.write_epub(buffer, book)
+    buffer.seek(0)
+    return buffer
+
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Generador Automático de Libros",
@@ -109,7 +141,7 @@ st.title("📚 Generador automático de libros")
 # Barra lateral con instrucciones y anuncio
 st.sidebar.header("📖 ¿Cómo funciona esta app?")
 st.sidebar.markdown("""
-Esta aplicación genera automáticamente libros de no ficción en formato `.docx` o `HTML` basados en un tema y una audiencia específica.  
+Esta aplicación genera automáticamente libros de no ficción en formato `.docx`, `HTML` o `eBook (.epub)` basados en un tema y una audiencia específica.  
 **Pasos para usarla:**
 1. Introduce el tema del libro.
 2. Especifica a quién va dirigido.
@@ -170,6 +202,15 @@ if st.button("🚀 Generar Libro"):
         data=html_file,
         file_name=f"{topic}.html",
         mime="text/html"
+    )
+
+    # Crear y descargar el archivo eBook (.epub)
+    epub_file = create_epub_document(chapters, topic)
+    st.download_button(
+        label="📖 Descargar en eBook (.epub)",
+        data=epub_file,
+        file_name=f"{topic}.epub",
+        mime="application/epub+zip"
     )
 
 # Pie de página simplificado
