@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from docx import Document
 from docx.shared import Inches, Pt
-from docx.enum.text import WD_LINE_SPACING
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from io import BytesIO
@@ -54,7 +54,7 @@ def add_page_numbers(doc):
     for section in doc.sections:
         footer = section.footer
         paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
-        paragraph.alignment = 1  # Center alignment
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
         run = paragraph.add_run()
         fldChar = OxmlElement('w:fldChar')
         fldChar.set(qn('w:fldCharType'), 'begin')
@@ -84,7 +84,7 @@ def create_word_document(chapters, title, author_name, author_bio):
 
     # Añadir título
     title_paragraph = doc.add_paragraph()
-    title_paragraph.alignment = 1  # Center alignment
+    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
     title_run = title_paragraph.add_run(title)
     title_run.bold = True
     title_run.font.size = Pt(14)
@@ -93,7 +93,7 @@ def create_word_document(chapters, title, author_name, author_bio):
     # Añadir nombre del autor si está proporcionado
     if author_name:
         author_paragraph = doc.add_paragraph()
-        author_paragraph.alignment = 1  # Center alignment
+        author_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
         author_run = author_paragraph.add_run(author_name)
         author_run.font.size = Pt(12)
         author_run.font.name = "Times New Roman"
@@ -121,7 +121,8 @@ def create_word_document(chapters, title, author_name, author_bio):
         for paragraph_text in paragraphs:
             paragraph = doc.add_paragraph(paragraph_text)
             paragraph.style = "Normal"
-            paragraph.paragraph_format.line_spacing = 1.1  # Interlineado de 1.1
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
+            paragraph.paragraph_format.space_after = Pt(3)  # Espaciado posterior de 3 puntos
             for run in paragraph.runs:
                 run.font.size = Pt(11)
                 run.font.name = "Times New Roman"
