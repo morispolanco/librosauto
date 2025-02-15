@@ -119,10 +119,10 @@ def create_word_document(chapters, title, author_name, author_bio):
         # Dividir el contenido del capítulo en párrafos
         paragraphs = chapter.split("\n")
         for paragraph_text in paragraphs:
-            paragraph = doc.add_paragraph(paragraph_text)
+            paragraph = doc.add_paragraph(paragraph_text.strip())  # Crear un nuevo párrafo
             paragraph.style = "Normal"
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
-            paragraph.paragraph_format.space_after = Pt(3)  # Espaciado posterior de 3 puntos
+            paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
             for run in paragraph.runs:
                 run.font.size = Pt(11)
                 run.font.name = "Times New Roman"
