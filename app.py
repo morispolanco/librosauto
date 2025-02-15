@@ -50,6 +50,53 @@ def create_word_document(chapters, title):
     buffer.seek(0)
     return buffer
 
+# Función para crear un archivo HTML
+def create_html_document(chapters, title):
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{title}</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 20px;
+            }}
+            h1 {{
+                color: #2c3e50;
+            }}
+            details {{
+                margin-bottom: 20px;
+            }}
+            summary {{
+                font-weight: bold;
+                cursor: pointer;
+                color: #34495e;
+            }}
+            p {{
+                margin: 10px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <h1>{title}</h1>
+    """
+    for i, chapter in enumerate(chapters, 1):
+        html_content += f"""
+        <details>
+            <summary>Capítulo {i}</summary>
+            <p>{chapter}</p>
+        </details>
+        """
+    html_content += """
+    </body>
+    </html>
+    """
+    return html_content.encode('utf-8')
+
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Generador Automático de Libros",
@@ -62,7 +109,7 @@ st.title("📚 Generador automático de libros")
 # Barra lateral con instrucciones y anuncio
 st.sidebar.header("📖 ¿Cómo funciona esta app?")
 st.sidebar.markdown("""
-Esta aplicación genera automáticamente libros de no ficción en formato `.docx` basados en un tema y una audiencia específica.  
+Esta aplicación genera automáticamente libros de no ficción en formato `.docx` o `HTML` basados en un tema y una audiencia específica.  
 **Pasos para usarla:**
 1. Introduce el tema del libro.
 2. Especifica a quién va dirigido.
@@ -114,6 +161,15 @@ if st.button("🚀 Generar Libro"):
         data=word_file,
         file_name=f"{topic}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    
+    # Crear y descargar el archivo HTML
+    html_file = create_html_document(chapters, topic)
+    st.download_button(
+        label="🌐 Descargar en HTML",
+        data=html_file,
+        file_name=f"{topic}.html",
+        mime="text/html"
     )
 
 # Pie de página simplificado
