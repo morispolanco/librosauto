@@ -11,17 +11,22 @@ def clean_markdown(text):
     return text.strip()
 
 # Función para generar un capítulo
-def generate_chapter(api_key, topic, audience, chapter_number):
+def generate_chapter(api_key, topic, audience, chapter_number, instructions=""):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
+    # Construir el mensaje con las instrucciones especiales
+    message_content = f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."
+    if instructions:
+        message_content += f" Instrucciones adicionales: {instructions}"
+    
     data = {
         "model": "qwen-turbo",
         "messages": [
             {"role": "system", "content": "Eres un asistente útil que escribe en español."},
-            {"role": "user", "content": f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."}
+            {"role": "user", "content": message_content}
         ]
     }
     try:
@@ -61,10 +66,10 @@ Esta aplicación genera automáticamente libros de no ficción en formato `.docx
 **Pasos para usarla:**
 1. Introduce el tema del libro.
 2. Especifica a quién va dirigido.
-3. Selecciona el número de capítulos deseados.
-4. Haz clic en "Generar Libro".
-5. Descarga el archivo generado.
-
+3. Escribe instrucciones especiales (opcional).
+4. Selecciona el número de capítulos deseados.
+5. Haz clic en "Generar Libro".
+6. Descarga el archivo generado.
 """)
 st.sidebar.markdown("""
 ---
@@ -76,12 +81,13 @@ st.sidebar.markdown("""
 if "DASHSCOPE_API_KEY" not in st.secrets:
     st.error("Por favor, configura la clave API en los secretos de Streamlit.")
     st.stop()
-
 api_key = st.secrets["DASHSCOPE_API_KEY"]
 
 # Entradas del usuario
 topic = st.text_input("📒 Tema del libro:")
 audience = st.text_input("🎯 Audiencia objetivo:")
+instructions = st.text_area("📝 Instrucciones especiales (opcional):", 
+                             placeholder="Ejemplo: Usa un tono formal, incluye ejemplos prácticos, evita tecnicismos...")
 num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=15, value=5)
 
 # Validación de entradas
@@ -89,12 +95,12 @@ if st.button("🚀 Generar Libro"):
     if not topic or not audience:
         st.error("Por favor, introduce un tema y una audiencia válidos.")
         st.stop()
-
+    
     chapters = []
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generando capítulo {i}...")
-        chapter_content = generate_chapter(api_key, topic, audience, i)
+        chapter_content = generate_chapter(api_key, topic, audience, i, instructions)
         word_count = len(chapter_content.split())  # Contar palabras
         chapters.append(chapter_content)
         with st.expander(f" Capítulo {i} ({word_count} palabras)"):
