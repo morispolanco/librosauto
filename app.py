@@ -169,7 +169,11 @@ instructions = st.text_area("📝 Instrucciones especiales (opcional):",
                              placeholder="Ejemplo: Usa un tono formal, incluye ejemplos prácticos, evita tecnicismos...")
 num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=15, value=5)
 
-# Validación de entradas
+# Estado de Streamlit para almacenar los capítulos generados
+if 'chapters' not in st.session_state:
+    st.session_state.chapters = []
+
+# Botón para generar el libro
 if st.button("🚀 Generar Libro"):
     if not topic or not audience:
         st.error("Por favor, introduce un tema y una audiencia válidos.")
@@ -186,8 +190,16 @@ if st.button("🚀 Generar Libro"):
             st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
     
-    # Crear y descargar el archivo Word
-    word_file = create_word_document(chapters, topic)
+    # Almacenar los capítulos en el estado de Streamlit
+    st.session_state.chapters = chapters
+
+# Mostrar opciones de descarga si hay capítulos generados
+if st.session_state.chapters:
+    st.subheader("⬇️ Opciones de descarga")
+    word_file = create_word_document(st.session_state.chapters, topic)
+    html_file = create_html_document(st.session_state.chapters, topic)
+    epub_file = create_epub_document(st.session_state.chapters, topic)
+
     st.download_button(
         label="📥 Descargar en Word",
         data=word_file,
@@ -195,8 +207,6 @@ if st.button("🚀 Generar Libro"):
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
     
-    # Crear y descargar el archivo HTML
-    html_file = create_html_document(chapters, topic)
     st.download_button(
         label="🌐 Descargar en HTML",
         data=html_file,
@@ -204,8 +214,6 @@ if st.button("🚀 Generar Libro"):
         mime="text/html"
     )
 
-    # Crear y descargar el archivo eBook (.epub)
-    epub_file = create_epub_document(chapters, topic)
     st.download_button(
         label="📖 Descargar en eBook (.epub)",
         data=epub_file,
