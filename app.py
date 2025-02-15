@@ -12,14 +12,20 @@ def clean_markdown(text):
     return text.strip()
 
 # Función para generar un capítulo
-def generate_chapter(api_key, topic, audience, chapter_number, instructions=""):
+def generate_chapter(api_key, topic, audience, chapter_number, instructions="", is_intro=False, is_conclusion=False):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     # Construir el mensaje con las instrucciones especiales
-    message_content = f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."
+    if is_intro:
+        message_content = f"Escribe la introducción de un libro sobre {topic} dirigido a {audience} con 500-800 palabras en español."
+    elif is_conclusion:
+        message_content = f"Escribe las conclusiones de un libro sobre {topic} dirigido a {audience} con 500-800 palabras en español."
+    else:
+        message_content = f"Escribe el capítulo {chapter_number} de un libro sobre {topic} dirigido a {audience} con 2000-2500 palabras en español."
+    
     if instructions:
         message_content += f" Instrucciones adicionales: {instructions}"
     
@@ -147,8 +153,9 @@ Esta aplicación genera automáticamente libros de no ficción en formato `.docx
 2. Especifica a quién va dirigido.
 3. Escribe instrucciones especiales (opcional).
 4. Selecciona el número de capítulos deseados.
-5. Haz clic en "Generar Libro".
-6. Descarga el archivo generado.
+5. Elige si deseas incluir una introducción y/o conclusiones.
+6. Haz clic en "Generar Libro".
+7. Descarga el archivo generado.
 """)
 st.sidebar.markdown("""
 ---
@@ -169,6 +176,10 @@ instructions = st.text_area("📝 Instrucciones especiales (opcional):",
                              placeholder="Ejemplo: Usa un tono formal, incluye ejemplos prácticos, evita tecnicismos...")
 num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=15, value=5)
 
+# Opciones para introducción y conclusiones
+include_intro = st.checkbox("✅ Incluir introducción", value=True)
+include_conclusion = st.checkbox("✅ Incluir conclusiones", value=True)
+
 # Estado de Streamlit para almacenar los capítulos generados
 if 'chapters' not in st.session_state:
     st.session_state.chapters = []
@@ -180,6 +191,16 @@ if st.button("🚀 Generar Libro"):
         st.stop()
     
     chapters = []
+    
+    # Generar introducción si está seleccionada
+    if include_intro:
+        st.write("⏳ Generando introducción...")
+        intro_content = generate_chapter(api_key, topic, audience, 0, instructions, is_intro=True)
+        chapters.append(intro_content)
+        with st.expander("📖 Introducción"):
+            st.write(intro_content)
+    
+    # Generar capítulos principales
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generando capítulo {i}...")
@@ -189,6 +210,14 @@ if st.button("🚀 Generar Libro"):
         with st.expander(f" Capítulo {i} ({word_count} palabras)"):
             st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
+    
+    # Generar conclusiones si están seleccionadas
+    if include_conclusion:
+        st.write("⏳ Generando conclusiones...")
+        conclusion_content = generate_chapter(api_key, topic, audience, 0, instructions, is_conclusion=True)
+        chapters.append(conclusion_content)
+        with st.expander("📖 Conclusiones"):
+            st.write(conclusion_content)
     
     # Almacenar los capítulos en el estado de Streamlit
     st.session_state.chapters = chapters
