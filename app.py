@@ -76,11 +76,11 @@ def create_word_document(chapters, title, author_name, author_bio):
     section.page_width = Inches(5.5)
     section.page_height = Inches(8.5)
 
-    # Configurar márgenes (top: 1 inch, bottom: 1.5 inches, sides: 1.25 inches)
+    # Configurar márgenes de 1 pulgada en todo
     section.top_margin = Inches(1)
-    section.bottom_margin = Inches(1.5)
-    section.left_margin = Inches(1.25)
-    section.right_margin = Inches(1.25)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.right_margin = Inches(1)
 
     # Añadir título
     title_paragraph = doc.add_paragraph()
@@ -122,7 +122,6 @@ def create_word_document(chapters, title, author_name, author_bio):
             paragraph = doc.add_paragraph(paragraph_text)
             paragraph.style = "Normal"
             paragraph.paragraph_format.line_spacing = 1.1  # Interlineado de 1.1
-            paragraph.paragraph_format.first_line_indent = Inches(0.5)  # Sangría de 0.5 pulgadas
             for run in paragraph.runs:
                 run.font.size = Pt(11)
                 run.font.name = "Times New Roman"
@@ -228,7 +227,10 @@ author_bio = st.text_area("👤 Author Profile (optional):",
                           placeholder="Example: Brief professional description or biography.")
 
 # Menú desplegable para elegir el idioma
-languages = ["English", "Spanish", "French", "German", "Chinese", "Japanese", "Russian", "Portuguese", "Italian", "Arabic"]
+languages = [
+    "English", "Spanish", "French", "German", "Chinese", "Japanese", 
+    "Russian", "Portuguese", "Italian", "Arabic", "Medieval Latin", "Koine Greek"
+]
 selected_language = st.selectbox("🌐 Choose the book's language:", languages)
 
 # Estado de Streamlit para almacenar los capítulos generados
@@ -248,7 +250,7 @@ if st.button("🚀 Generate Book"):
         st.write("⏳ Generating introduction...")
         intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_intro=True)
         chapters.append(intro_content)
-        with st.expander("📖 Introduction"):
+        with st.expander("🌟 Introduction"):
             st.write(intro_content)
     
     # Generar capítulos principales
@@ -267,7 +269,7 @@ if st.button("🚀 Generate Book"):
         st.write("⏳ Generating conclusions...")
         conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_conclusion=True)
         chapters.append(conclusion_content)
-        with st.expander("📖 Conclusions"):
+        with st.expander("🔚 Conclusions"):
             st.write(conclusion_content)
     
     # Almacenar los capítulos en el estado de Streamlit
