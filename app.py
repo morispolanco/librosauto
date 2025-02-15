@@ -46,9 +46,27 @@ def generate_chapter(api_key, topic, audience, chapter_number, instructions="", 
     return clean_markdown(content)
 
 # Función para crear un documento Word
-def create_word_document(chapters, title):
+def create_word_document(chapters, title, include_toc, author_name, author_bio):
     doc = Document()
     doc.add_heading(title, level=1)
+    
+    # Añadir tabla de contenidos si está seleccionada
+    if include_toc:
+        doc.add_heading("Tabla de Contenidos", level=2)
+        for i in range(len(chapters)):
+            doc.add_paragraph(f"Capítulo {i + 1}")
+    
+    # Añadir nombre del autor si está proporcionado
+    if author_name:
+        doc.add_heading("Autor", level=2)
+        doc.add_paragraph(author_name)
+    
+    # Añadir perfil del autor si está proporcionado
+    if author_bio:
+        doc.add_heading("Información del Autor", level=2)
+        doc.add_paragraph(author_bio)
+    
+    # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
         doc.add_heading(f"Capítulo {i}", level=2)
         doc.add_paragraph(chapter)
@@ -58,7 +76,7 @@ def create_word_document(chapters, title):
     return buffer
 
 # Función para crear un archivo HTML
-def create_html_document(chapters, title):
+def create_html_document(chapters, title, include_toc, author_name, author_bio):
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -91,9 +109,25 @@ def create_html_document(chapters, title):
     <body>
         <h1>{title}</h1>
     """
+    # Añadir tabla de contenidos si está seleccionada
+    if include_toc:
+        html_content += "<h2>Tabla de Contenidos</h2><ul>"
+        for i in range(len(chapters)):
+            html_content += f"<li><a href='#capitulo-{i + 1}'>Capítulo {i + 1}</a></li>"
+        html_content += "</ul>"
+    
+    # Añadir nombre del autor si está proporcionado
+    if author_name:
+        html_content += f"<h2>Autor</h2><p>{author_name}</p>"
+    
+    # Añadir perfil del autor si está proporcionado
+    if author_bio:
+        html_content += f"<h2>Información del Autor</h2><p>{author_bio}</p>"
+    
+    # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
         html_content += f"""
-        <details>
+        <details id="capitulo-{i}">
             <summary>Capítulo {i}</summary>
             <p>{chapter}</p>
         </details>
@@ -105,14 +139,14 @@ def create_html_document(chapters, title):
     return html_content.encode('utf-8')
 
 # Función para crear un archivo eBook (.epub)
-def create_epub_document(chapters, title):
+def create_epub_document(chapters, title, include_toc, author_name, author_bio):
     book = epub.EpubBook()
 
     # Metadatos del eBook
     book.set_identifier('id123456')
     book.set_title(title)
     book.set_language('es')
-    book.add_author('Generador Automático de Libros')
+    book.add_author(author_name or 'Generador Automático de Libros')
 
     # Crear capítulos
     epub_chapters = []
@@ -121,7 +155,19 @@ def create_epub_document(chapters, title):
         c.content = f"<h1>Capítulo {i}</h1><p>{chapter}</p>"
         book.add_item(c)
         epub_chapters.append(c)
-
+    
+    # Añadir tabla de contenidos si está seleccionada
+    if include_toc:
+        toc_chapters = [epub.Link(f'chap_{i}.xhtml', f'Capítulo {i}', f'chap_{i}') for i in range(1, len(chapters) + 1)]
+        book.toc = tuple(toc_chapters)
+    
+    # Añadir perfil del autor si está proporcionado
+    if author_bio:
+        bio = epub.EpubHtml(title='Información del Autor', file_name='author_bio.xhtml', lang='es')
+        bio.content = f"<h1>Información del Autor</h1><p>{author_bio}</p>"
+        book.add_item(bio)
+        epub_chapters.append(bio)
+    
     # Definir tabla de contenido
     book.toc = tuple(epub_chapters)
 
@@ -153,7 +199,7 @@ Esta aplicación genera automáticamente libros de no ficción en formato `.docx
 2. Especifica a quién va dirigido.
 3. Escribe instrucciones especiales (opcional).
 4. Selecciona el número de capítulos deseados.
-5. Elige si deseas incluir una introducción y/o conclusiones.
+5. Elige si deseas incluir una introducción, conclusiones, tabla de contenidos, nombre del autor y perfil del autor.
 6. Haz clic en "Generar Libro".
 7. Descarga el archivo generado.
 """)
@@ -179,6 +225,12 @@ num_chapters = st.slider("🔢 Número de capítulos", min_value=1, max_value=15
 # Opciones para introducción y conclusiones
 include_intro = st.checkbox("✅ Incluir introducción", value=True)
 include_conclusion = st.checkbox("✅ Incluir conclusiones", value=True)
+
+# Opciones adicionales
+include_toc = st.checkbox("✅ Incluir tabla de contenidos", value=True)
+author_name = st.text_input("🖋️ Nombre del autor (opcional):")
+author_bio = st.text_area("👤 Perfil del autor (opcional):", 
+                          placeholder="Ejemplo: Breve descripción profesional o biografía.")
 
 # Estado de Streamlit para almacenar los capítulos generados
 if 'chapters' not in st.session_state:
@@ -225,9 +277,9 @@ if st.button("🚀 Generar Libro"):
 # Mostrar opciones de descarga si hay capítulos generados
 if st.session_state.chapters:
     st.subheader("⬇️ Opciones de descarga")
-    word_file = create_word_document(st.session_state.chapters, topic)
-    html_file = create_html_document(st.session_state.chapters, topic)
-    epub_file = create_epub_document(st.session_state.chapters, topic)
+    word_file = create_word_document(st.session_state.chapters, topic, include_toc, author_name, author_bio)
+    html_file = create_html_document(st.session_state.chapters, topic, include_toc, author_name, author_bio)
+    epub_file = create_epub_document(st.session_state.chapters, topic, include_toc, author_name, author_bio)
 
     st.download_button(
         label="📥 Descargar en Word",
