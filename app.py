@@ -76,11 +76,11 @@ def create_word_document(chapters, title, author_name, author_bio):
     section.page_width = Inches(5.5)
     section.page_height = Inches(8.5)
 
-    # Configurar márgenes de 1 pulgada en todo
-    section.top_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.right_margin = Inches(1)
+    # Configurar márgenes de 0.8 pulgadas en todo
+    section.top_margin = Inches(0.8)
+    section.bottom_margin = Inches(0.8)
+    section.left_margin = Inches(0.8)
+    section.right_margin = Inches(0.8)
 
     # Añadir título
     title_paragraph = doc.add_paragraph()
@@ -295,10 +295,3 @@ if st.session_state.chapters:
         file_name=f"{topic}.epub",
         mime="application/epub+zip"
     )
-
-# Pie de página simplificado
-st.markdown("""
-    <footer style='text-align: center; padding: 10px; background-color: #f8f9fa; border-top: 1px solid #ddd;'>
-        <a href='https://hablemosbien.org' target='_blank' style='color: #007bff; text-decoration: none;'>Hablemos Bien</a>
-    </footer>
-""", unsafe_allow_html=True)
