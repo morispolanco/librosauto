@@ -1,6 +1,10 @@
 import streamlit as st
 import requests
 from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_LINE_SPACING
+from docx.oxml.ns import qn
+from docx.oxml import OxmlElement
 from io import BytesIO
 import re
 from ebooklib import epub
@@ -45,25 +49,90 @@ def generate_chapter(api_key, topic, audience, chapter_number, language, instruc
         content = "Error generating the chapter."
     return clean_markdown(content)
 
-# Función para crear un documento Word
+# Función para agregar numeración de páginas al documento Word
+def add_page_numbers(doc):
+    for section in doc.sections:
+        footer = section.footer
+        paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+        paragraph.alignment = 1  # Center alignment
+        run = paragraph.add_run()
+        fldChar = OxmlElement('w:fldChar')
+        fldChar.set(qn('w:fldCharType'), 'begin')
+        instrText = OxmlElement('w:instrText')
+        instrText.set(qn('xml:space'), 'preserve')
+        instrText.text = "PAGE"
+        fldChar2 = OxmlElement('w:fldChar')
+        fldChar2.set(qn('w:fldCharType'), 'end')
+        run._r.append(fldChar)
+        run._r.append(instrText)
+        run._r.append(fldChar2)
+
+# Función para crear un documento Word con formato específico
 def create_word_document(chapters, title, author_name, author_bio):
     doc = Document()
-    doc.add_heading(title, level=1)
-    
+
+    # Configurar el tamaño de página (5.5 x 8.5 pulgadas)
+    section = doc.sections[0]
+    section.page_width = Inches(5.5)
+    section.page_height = Inches(8.5)
+
+    # Configurar márgenes (top: 1 inch, bottom: 1.5 inches, sides: 1.25 inches)
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1.5)
+    section.left_margin = Inches(1.25)
+    section.right_margin = Inches(1.25)
+
+    # Añadir título
+    title_paragraph = doc.add_paragraph()
+    title_paragraph.alignment = 1  # Center alignment
+    title_run = title_paragraph.add_run(title)
+    title_run.bold = True
+    title_run.font.size = Pt(14)
+    title_run.font.name = "Times New Roman"
+
     # Añadir nombre del autor si está proporcionado
     if author_name:
-        doc.add_heading("Author", level=2)
-        doc.add_paragraph(author_name)
-    
+        author_paragraph = doc.add_paragraph()
+        author_paragraph.alignment = 1  # Center alignment
+        author_run = author_paragraph.add_run(author_name)
+        author_run.font.size = Pt(12)
+        author_run.font.name = "Times New Roman"
+        doc.add_page_break()  # Salto de página después del título y autor
+
     # Añadir perfil del autor si está proporcionado
     if author_bio:
-        doc.add_heading("Author Information", level=2)
-        doc.add_paragraph(author_bio)
-    
+        bio_paragraph = doc.add_paragraph("Author Information")
+        bio_paragraph.style = "Heading 2"
+        bio_paragraph.runs[0].font.size = Pt(11)
+        bio_paragraph.runs[0].font.name = "Times New Roman"
+        doc.add_paragraph(author_bio).style = "Normal"
+        doc.add_page_break()  # Salto de página después del perfil del autor
+
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
-        doc.add_heading(f"Chapter {i}", level=2)
-        doc.add_paragraph(chapter)
+        # Añadir encabezado del capítulo
+        chapter_title = doc.add_paragraph(f"Chapter {i}")
+        chapter_title.style = "Heading 1"
+        chapter_title.runs[0].font.size = Pt(12)
+        chapter_title.runs[0].font.name = "Times New Roman"
+
+        # Dividir el contenido del capítulo en párrafos
+        paragraphs = chapter.split("\n")
+        for paragraph_text in paragraphs:
+            paragraph = doc.add_paragraph(paragraph_text)
+            paragraph.style = "Normal"
+            paragraph.paragraph_format.line_spacing = 1.1  # Interlineado de 1.1
+            paragraph.paragraph_format.first_line_indent = Inches(0.5)  # Sangría de 0.5 pulgadas
+            for run in paragraph.runs:
+                run.font.size = Pt(11)
+                run.font.name = "Times New Roman"
+
+        doc.add_page_break()  # Salto de página entre capítulos
+
+    # Agregar numeración de páginas
+    add_page_numbers(doc)
+
+    # Guardar el documento en memoria
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
