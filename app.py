@@ -269,7 +269,3 @@ if st.session_state.chapters:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# Pie de página simplificado
-st.markdown("""
-       Hablemos Bien
-""", unsafe_allow_html=True)
