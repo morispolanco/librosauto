@@ -7,7 +7,6 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 from io import BytesIO
 import re
-from ebooklib import epub
 
 # Función para limpiar Markdown
 def clean_markdown(text):
@@ -136,16 +135,14 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.size = Pt(12)
         chapter_title.runs[0].font.name = "Times New Roman"
 
-        # Dividir el contenido del capítulo en párrafos
-        paragraphs = chapter.split("\n")
-        for paragraph_text in paragraphs:
-            paragraph = doc.add_paragraph(paragraph_text.strip())  # Crear un nuevo párrafo
-            paragraph.style = "Normal"
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
-            paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
-            for run in paragraph.runs:
-                run.font.size = Pt(11)
-                run.font.name = "Times New Roman"
+        # Insertar el contenido del capítulo como un bloque continuo
+        paragraph = doc.add_paragraph(chapter.strip())  # Crear un nuevo párrafo
+        paragraph.style = "Normal"
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
+        paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
+        for run in paragraph.runs:
+            run.font.size = Pt(11)
+            run.font.name = "Times New Roman"
 
         doc.add_page_break()  # Salto de página entre capítulos
 
@@ -155,52 +152,6 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     # Guardar el documento en memoria
     buffer = BytesIO()
     doc.save(buffer)
-    buffer.seek(0)
-    return buffer
-
-# Función para crear un archivo eBook (.epub)
-def create_epub_document(chapters, title, author_name, author_bio):
-    book = epub.EpubBook()
-
-    # Metadatos del eBook
-    book.set_identifier('id123456')
-    book.set_title(title)
-    book.set_language('en')  # Idioma predeterminado del eBook
-    book.add_author(author_name or 'Automatic Book Generator')
-
-    # Crear capítulos
-    epub_chapters = []
-    for i, chapter in enumerate(chapters, 1):
-        c = epub.EpubHtml(
-            title=f'Chapter {i}',
-            file_name=f'chap_{i}.xhtml',
-            lang='en'
-        )
-        c.content = f"<h1>Chapter {i}</h1><p>{chapter}</p>"
-        book.add_item(c)
-        epub_chapters.append(c)
-    
-    # Añadir perfil del autor si está proporcionado
-    if author_bio:
-        bio = epub.EpubHtml(
-            title='Author Information',
-            file_name='author_bio.xhtml',
-            lang='en'
-        )
-        bio.content = f"<h1>Author Information</h1><p>{author_bio}</p>"
-        book.add_item(bio)
-        epub_chapters.append(bio)
-    
-    # Definir tabla de contenido
-    book.toc = tuple(epub_chapters)
-
-    # Agregar navegación
-    book.add_item(epub.EpubNcx())
-    book.add_item(epub.EpubNav())
-
-    # Guardar el eBook en memoria
-    buffer = BytesIO()
-    epub.write_epub(buffer, book)
     buffer.seek(0)
     return buffer
 
@@ -216,7 +167,7 @@ st.title("📚 Automatic Book Generator")
 # Barra lateral con instrucciones y anuncio
 st.sidebar.header("📖 How does this app work?")
 st.sidebar.markdown("""
-This application automatically generates non-fiction books in `.docx` or `eBook (.epub)` format based on a topic and target audience.  
+This application automatically generates non-fiction books in `.docx` format based on a topic and target audience.  
 **Steps to use it:**
 1. Enter the book's topic.
 2. Specify the target audience.
@@ -308,7 +259,6 @@ if st.button("🚀 Generate Book"):
 if st.session_state.chapters:
     st.subheader("⬇️ Download Options")
     word_file = create_word_document(st.session_state.chapters, topic, author_name, author_bio, selected_language.lower())
-    epub_file = create_epub_document(st.session_state.chapters, topic, author_name, author_bio)
 
     st.download_button(
         label="📥 Download in Word",
@@ -316,15 +266,3 @@ if st.session_state.chapters:
         file_name=f"{topic}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-
-    st.download_button(
-        label="📖 Download as eBook (.epub)",
-        data=epub_file,
-        file_name=f"{topic}.epub",
-        mime="application/epub+zip"
-    )
-
-# Pie de página simplificado
-st.markdown("""
-       Hablemos Bien
-""", unsafe_allow_html=True)
