@@ -158,13 +158,14 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     buffer.seek(0)
     return buffer
 
+# Función para crear un archivo eBook (.epub)
 def create_epub_document(chapters, title, author_name, author_bio):
     book = epub.EpubBook()
 
-    # Metadatos
+    # Metadatos del eBook
     book.set_identifier('id123456')
     book.set_title(title)
-    book.set_language('en')
+    book.set_language('en')  # Idioma predeterminado del eBook
     book.add_author(author_name or 'Automatic Book Generator')
 
     # Crear capítulos
@@ -175,10 +176,10 @@ def create_epub_document(chapters, title, author_name, author_bio):
             file_name=f'chap_{i}.xhtml',
             lang='en'
         )
-        c.content = f"<h1>Chapter {i}</h1><p>{clean_markdown(chapter)}</p>"
+        c.content = f"<h1>Chapter {i}</h1><p>{chapter}</p>"
         book.add_item(c)
         epub_chapters.append(c)
-
+    
     # Añadir perfil del autor si está proporcionado
     if author_bio:
         bio = epub.EpubHtml(
@@ -186,10 +187,10 @@ def create_epub_document(chapters, title, author_name, author_bio):
             file_name='author_bio.xhtml',
             lang='en'
         )
-        bio.content = f"<h1>Author Information</h1><p>{clean_markdown(author_bio)}</p>"
+        bio.content = f"<h1>Author Information</h1><p>{author_bio}</p>"
         book.add_item(bio)
         epub_chapters.append(bio)
-
+    
     # Definir tabla de contenido
     book.toc = tuple(epub_chapters)
 
@@ -202,7 +203,7 @@ def create_epub_document(chapters, title, author_name, author_bio):
     epub.write_epub(buffer, book)
     buffer.seek(0)
     return buffer
-    
+
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Automatic Book Generator",
@@ -322,3 +323,8 @@ if st.session_state.chapters:
         file_name=f"{topic}.epub",
         mime="application/epub+zip"
     )
+
+# Pie de página simplificado
+st.markdown("""
+       Hablemos Bien
+""", unsafe_allow_html=True)
