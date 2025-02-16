@@ -29,13 +29,13 @@ def format_title(title, language):
         return title.title()
 
 # Función para generar un capítulo con secciones
-def generate_chapter(api_key, topic, audience, chapter_number, language, instructions=""):
+def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", num_sections=5):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with 2000-2500 words in {language}. Include 5 sections."
+    message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with {num_sections} sections in {language}."
     
     if instructions:
         message_content += f" Additional instructions: {instructions}"
@@ -74,23 +74,8 @@ def add_page_numbers(doc):
         run._r.append(instrText)
         run._r.append(fldChar2)
 
-# Función para crear una tabla de contenido
-def generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, language):
-    toc = "Table of Contents:\n"
-    if include_intro:
-        toc += "Introduction\n"
-    for i in range(1, num_chapters + 1):
-        chapter_title = f"Chapter {i}" if language.lower() != "spanish" else f"Capítulo {i}"
-        toc += f"{chapter_title}\n"
-        for j in range(1, 6):  # Cinco secciones por capítulo
-            section_title = f"Section {j}"
-            toc += f"  {section_title}\n"
-    if include_conclusion:
-        toc += "Conclusions\n"
-    return toc
-
 # Función para crear un documento Word con formato específico
-def create_word_document(chapters, title, author_name, author_bio, language, table_of_contents):
+def create_word_document(chapters, title, author_name, author_bio, language):
     doc = Document()
 
     # Configurar el tamaño de página (5.5 x 8.5 pulgadas)
@@ -130,15 +115,6 @@ def create_word_document(chapters, title, author_name, author_bio, language, tab
         bio_paragraph.runs[0].font.name = "Times New Roman"
         doc.add_paragraph(author_bio).style = "Normal"
         doc.add_page_break()
-
-    # Añadir tabla de contenido
-    toc_paragraph = doc.add_paragraph("Table of Contents")
-    toc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    toc_paragraph.runs[0].bold = True
-    toc_paragraph.runs[0].font.size = Pt(12)
-    toc_paragraph.runs[0].font.name = "Times New Roman"
-    doc.add_paragraph(table_of_contents).style = "Normal"
-    doc.add_page_break()
 
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
@@ -197,10 +173,11 @@ This application automatically generates non-fiction books in `.docx` format bas
 2. Specify the target audience.
 3. Write special instructions (optional).
 4. Select the number of chapters desired (maximum 20).
-5. Choose the book's language.
-6. Provide or generate a table of contents.
-7. Click "Generate Book".
-8. Download the generated file.
+5. Choose the number of sections per chapter (1-10).
+6. Choose the book's language.
+7. Decide whether to include an introduction, conclusions, author name, and author profile.
+8. Click "Generate Book".
+9. Download the generated file.
 """)
 st.sidebar.markdown("""
 ---
@@ -220,6 +197,7 @@ audience = st.text_input("🎯 Target Audience:")
 instructions = st.text_area("📝 Special Instructions (optional):", 
                              placeholder="Example: Use a formal tone, include practical examples, avoid technical jargon...")
 num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
+num_sections = st.slider("🔢 Number of Sections per Chapter", min_value=1, max_value=10, value=5)
 
 # Opciones para introducción y conclusiones
 include_intro = st.checkbox("✅ Include Introduction", value=True)
@@ -231,16 +209,6 @@ languages = [
     "Russian", "Portuguese", "Italian", "Arabic", "Medieval Latin", "Koine Greek"
 ]
 selected_language = st.selectbox("🌐 Choose the book's language:", languages)
-
-# Generación automática de la tabla de contenido
-table_of_contents = generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, selected_language)
-st.subheader("📋 Table of Contents")
-st.text(table_of_contents)
-
-# Botón para regenerar la tabla de contenido
-if st.button("🔄 Regenerate Table of Contents"):
-    table_of_contents = generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, selected_language)
-    st.text(table_of_contents)
 
 # Estado de Streamlit para almacenar los capítulos generados
 if 'chapters' not in st.session_state:
@@ -254,19 +222,40 @@ if st.button("🚀 Generate Book"):
     
     chapters = []
     progress_bar = st.progress(0)
+    
+    # Generar introducción si está seleccionada
+    if include_intro:
+        st.write("⏳ Generating introduction...")
+        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, num_sections)
+        chapters.append(intro_content)
+        with st.expander("🌟 Introduction"):
+            st.write(intro_content)
+    
+    # Generar capítulos principales
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
-        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions)
+        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions, num_sections)
         chapters.append(chapter_content)
+        word_count = len(chapter_content.split())  # Contar palabras
+        with st.expander(f" Chapter {i} ({word_count} words)"):
+            st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
-
+    
+    # Generar conclusiones si están seleccionadas
+    if include_conclusion:
+        st.write("⏳ Generating conclusions...")
+        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, num_sections)
+        chapters.append(conclusion_content)
+        with st.expander("🔚 Conclusions"):
+            st.write(conclusion_content)
+    
     # Almacenar los capítulos en el estado de Streamlit
     st.session_state.chapters = chapters
 
 # Mostrar opciones de descarga si hay capítulos generados
 if st.session_state.chapters:
     st.subheader("⬇️ Download Options")
-    word_file = create_word_document(st.session_state.chapters, topic, "", "", selected_language.lower(), table_of_contents)
+    word_file = create_word_document(st.session_state.chapters, topic, "", "", selected_language.lower())
 
     st.download_button(
         label="📥 Download in Word",
