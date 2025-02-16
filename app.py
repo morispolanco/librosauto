@@ -8,7 +8,6 @@ from docx.oxml import OxmlElement
 from io import BytesIO
 import re
 from ebooklib import epub
-from hyphenate import hyphenate_word  # Biblioteca para división automática de palabras
 
 # Función para limpiar Markdown
 def clean_markdown(text):
@@ -32,23 +31,6 @@ def format_title(title, language):
     else:
         # Capitalizar cada palabra para otros idiomas
         return title.title()
-
-# Función para dividir palabras automáticamente
-def auto_hyphenate_paragraph(paragraph_text, language):
-    """
-    Divide las palabras largas en un párrafo según las reglas del idioma.
-    """
-    words = paragraph_text.split()
-    hyphenated_words = []
-    for word in words:
-        try:
-            # Intentar dividir la palabra usando hyphenate_word
-            hyphenated_word = "-".join(hyphenate_word(word, language))
-            hyphenated_words.append(hyphenated_word)
-        except Exception:
-            # Si falla, mantener la palabra original
-            hyphenated_words.append(word)
-    return " ".join(hyphenated_words)
 
 # Función para generar un capítulo
 def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", is_intro=False, is_conclusion=False):
@@ -157,9 +139,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         # Dividir el contenido del capítulo en párrafos
         paragraphs = chapter.split("\n")
         for paragraph_text in paragraphs:
-            # Aplicar división automática de palabras
-            hyphenated_paragraph = auto_hyphenate_paragraph(paragraph_text.strip(), language)
-            paragraph = doc.add_paragraph(hyphenated_paragraph)  # Crear un nuevo párrafo
+            paragraph = doc.add_paragraph(paragraph_text.strip())  # Crear un nuevo párrafo
             paragraph.style = "Normal"
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
             paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
@@ -192,14 +172,14 @@ def create_epub_document(chapters, title, author_name, author_bio):
     epub_chapters = []
     for i, chapter in enumerate(chapters, 1):
         c = epub.EpubHtml(title=f'Chapter {i}', file_name=f'chap_{i}.xhtml', lang='en')
-        c.content = f"<h1>Chapter {i}</h1><p>{chapter}</p>"
+        c.content = f" Chapter {i}\n{chapter}\n"
         book.add_item(c)
         epub_chapters.append(c)
     
     # Añadir perfil del autor si está proporcionado
     if author_bio:
         bio = epub.EpubHtml(title='Author Information', file_name='author_bio.xhtml', lang='en')
-        bio.content = f"<h1>Author Information</h1><p>{author_bio}</p>"
+        bio.content = f" Author Information\n{author_bio}\n"
         book.add_item(bio)
         epub_chapters.append(bio)
     
@@ -335,10 +315,3 @@ if st.session_state.chapters:
         file_name=f"{topic}.epub",
         mime="application/epub+zip"
     )
-
-# Pie de página simplificado
-st.markdown("""
-    <footer style='text-align: center; padding: 10px; background-color: #f8f9fa; border-top: 1px solid #ddd;'>
-        <a href='https://hablemosbien.org' target='_blank' style='color: #007bff; text-decoration: none;'>Hablemos Bien</a>
-    </footer>
-""", unsafe_allow_html=True)
