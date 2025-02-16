@@ -28,19 +28,19 @@ def format_title(title, language):
     else:
         return title.title()
 
-# Función para generar un capítulo con secciones
-def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", num_sections=5):
+# Función para generar un capítulo
+def generate_chapter(api_key, topic, audience, chapter_number, language, instructions=""):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with {num_sections} sections in {language}."
+    message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} in {language}."
     
     if instructions:
         message_content += f" Additional instructions: {instructions}"
     
-    data = {
+    data = { 
         "model": "qwen-turbo",
         "messages": [
             {"role": "system", "content": f"You are a helpful assistant that writes in {language}."},
@@ -171,13 +171,12 @@ This application automatically generates non-fiction books in `.docx` format bas
 **Steps to use it:**
 1. Enter the book's topic.
 2. Specify the target audience.
-3. Write special instructions (optional).
+3. Write special instructions (optional). 
 4. Select the number of chapters desired (maximum 20).
-5. Choose the number of sections per chapter (1-10).
-6. Choose the book's language.
-7. Decide whether to include an introduction, conclusions, author name, and author profile.
-8. Click "Generate Book".
-9. Download the generated file.
+5. Choose the book's language.
+6. Decide whether to include an introduction, conclusions, author name, and author profile.
+7. Click "Generate Book".
+8. Download the generated file.
 """)
 st.sidebar.markdown("""
 ---
@@ -197,7 +196,6 @@ audience = st.text_input("🎯 Target Audience:")
 instructions = st.text_area("📝 Special Instructions (optional):", 
                              placeholder="Example: Use a formal tone, include practical examples, avoid technical jargon...")
 num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
-num_sections = st.slider("🔢 Number of Sections per Chapter", min_value=1, max_value=10, value=5)
 
 # Opciones para introducción y conclusiones
 include_intro = st.checkbox("✅ Include Introduction", value=True)
@@ -226,7 +224,7 @@ if st.button("🚀 Generate Book"):
     # Generar introducción si está seleccionada
     if include_intro:
         st.write("⏳ Generating introduction...")
-        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, num_sections)
+        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions)
         chapters.append(intro_content)
         with st.expander("🌟 Introduction"):
             st.write(intro_content)
@@ -234,7 +232,7 @@ if st.button("🚀 Generate Book"):
     # Generar capítulos principales
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
-        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions, num_sections)
+        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions)
         chapters.append(chapter_content)
         word_count = len(chapter_content.split())  # Contar palabras
         with st.expander(f" Chapter {i} ({word_count} words)"):
@@ -244,7 +242,7 @@ if st.button("🚀 Generate Book"):
     # Generar conclusiones si están seleccionadas
     if include_conclusion:
         st.write("⏳ Generating conclusions...")
-        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, num_sections)
+        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions)
         chapters.append(conclusion_content)
         with st.expander("🔚 Conclusions"):
             st.write(conclusion_content)
