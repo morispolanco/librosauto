@@ -22,29 +22,20 @@ def format_title(title, language):
     - Otros idiomas: Mayúscula inicial en cada palabra.
     """
     if language.lower() == "spanish":
-        # Dividir el título en palabras
         words = title.split()
-        # Mantener mayúscula inicial solo en la primera palabra y nombres propios
         formatted_words = [words[0].capitalize()] + [word.lower() for word in words[1:]]
         return " ".join(formatted_words)
     else:
-        # Capitalizar cada palabra para otros idiomas
         return title.title()
 
-# Función para generar un capítulo
-def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", is_intro=False, is_conclusion=False):
+# Función para generar un capítulo con secciones
+def generate_chapter(api_key, topic, audience, chapter_number, language, instructions=""):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    # Construir el mensaje con las instrucciones especiales
-    if is_intro:
-        message_content = f"Write the introduction of a book about {topic} aimed at {audience} with 500-800 words in {language}."
-    elif is_conclusion:
-        message_content = f"Write the conclusions of a book about {topic} aimed at {audience} with 500-800 words in {language}."
-    else:
-        message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with 2000-2500 words in {language}."
+    message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with 2000-2500 words in {language}. Include 5 sections."
     
     if instructions:
         message_content += f" Additional instructions: {instructions}"
@@ -58,7 +49,7 @@ def generate_chapter(api_key, topic, audience, chapter_number, language, instruc
     }
     try:
         response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()  # Lanza una excepción si hay un error HTTP
+        response.raise_for_status()
         content = response.json().get("choices", [{}])[0].get("message", {}).get("content", "Error generating the chapter.")
     except Exception as e:
         st.error(f"Error generating chapter {chapter_number}: {str(e)}")
@@ -83,8 +74,23 @@ def add_page_numbers(doc):
         run._r.append(instrText)
         run._r.append(fldChar2)
 
+# Función para crear una tabla de contenido
+def generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, language):
+    toc = "Table of Contents:\n"
+    if include_intro:
+        toc += "Introduction\n"
+    for i in range(1, num_chapters + 1):
+        chapter_title = f"Chapter {i}" if language.lower() != "spanish" else f"Capítulo {i}"
+        toc += f"{chapter_title}\n"
+        for j in range(1, 6):  # Cinco secciones por capítulo
+            section_title = f"Section {j}"
+            toc += f"  {section_title}\n"
+    if include_conclusion:
+        toc += "Conclusions\n"
+    return toc
+
 # Función para crear un documento Word con formato específico
-def create_word_document(chapters, title, author_name, author_bio, language):
+def create_word_document(chapters, title, author_name, author_bio, language, table_of_contents):
     doc = Document()
 
     # Configurar el tamaño de página (5.5 x 8.5 pulgadas)
@@ -101,7 +107,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     # Añadir título formateado según el idioma
     formatted_title = format_title(title, language)
     title_paragraph = doc.add_paragraph()
-    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
+    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_run = title_paragraph.add_run(formatted_title)
     title_run.bold = True
     title_run.font.size = Pt(14)
@@ -110,11 +116,11 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     # Añadir nombre del autor si está proporcionado
     if author_name:
         author_paragraph = doc.add_paragraph()
-        author_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER  # Center alignment
+        author_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         author_run = author_paragraph.add_run(author_name)
         author_run.font.size = Pt(12)
         author_run.font.name = "Times New Roman"
-        doc.add_page_break()  # Salto de página después del título y autor
+        doc.add_page_break()
 
     # Añadir perfil del autor si está proporcionado
     if author_bio:
@@ -123,7 +129,16 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         bio_paragraph.runs[0].font.size = Pt(11)
         bio_paragraph.runs[0].font.name = "Times New Roman"
         doc.add_paragraph(author_bio).style = "Normal"
-        doc.add_page_break()  # Salto de página después del perfil del autor
+        doc.add_page_break()
+
+    # Añadir tabla de contenido
+    toc_paragraph = doc.add_paragraph("Table of Contents")
+    toc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    toc_paragraph.runs[0].bold = True
+    toc_paragraph.runs[0].font.size = Pt(12)
+    toc_paragraph.runs[0].font.name = "Times New Roman"
+    doc.add_paragraph(table_of_contents).style = "Normal"
+    doc.add_page_break()
 
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
@@ -135,18 +150,25 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.size = Pt(12)
         chapter_title.runs[0].font.name = "Times New Roman"
 
-        # Dividir el contenido del capítulo en párrafos
-        paragraphs = chapter.split("\n")
-        for paragraph_text in paragraphs:
-            paragraph = doc.add_paragraph(paragraph_text.strip())  # Crear un nuevo párrafo
+        # Dividir el contenido del capítulo en secciones
+        sections = chapter.split("\n\n")  # Suponemos que las secciones están separadas por dos saltos de línea
+        for j, section_text in enumerate(sections, 1):
+            section_title = f"Section {j}"
+            section_paragraph = doc.add_paragraph(section_title)
+            section_paragraph.style = "Heading 2"
+            section_paragraph.runs[0].font.size = Pt(11)
+            section_paragraph.runs[0].font.name = "Times New Roman"
+
+            # Añadir el contenido de la sección
+            paragraph = doc.add_paragraph(section_text.strip())
             paragraph.style = "Normal"
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
-            paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            paragraph.paragraph_format.space_after = Pt(0)
             for run in paragraph.runs:
                 run.font.size = Pt(11)
                 run.font.name = "Times New Roman"
 
-        doc.add_page_break()  # Salto de página entre capítulos
+        doc.add_page_break()
 
     # Agregar numeración de páginas
     add_page_numbers(doc)
@@ -160,7 +182,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Automatic Book Generator",
-    page_icon="📚",  # Ícono para la pestaña del navegador
+    page_icon="📚",
 )
 
 # Título con ícono
@@ -176,7 +198,7 @@ This application automatically generates non-fiction books in `.docx` format bas
 3. Write special instructions (optional).
 4. Select the number of chapters desired (maximum 20).
 5. Choose the book's language.
-6. Decide whether to include an introduction, conclusions, author name, and author profile.
+6. Provide or generate a table of contents.
 7. Click "Generate Book".
 8. Download the generated file.
 """)
@@ -203,17 +225,22 @@ num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, v
 include_intro = st.checkbox("✅ Include Introduction", value=True)
 include_conclusion = st.checkbox("✅ Include Conclusions", value=True)
 
-# Opciones adicionales
-author_name = st.text_input("🖋️ Author Name (optional):")
-author_bio = st.text_area("👤 Author Profile (optional):", 
-                          placeholder="Example: Brief professional description or biography.")
-
 # Menú desplegable para elegir el idioma
 languages = [
     "English", "Spanish", "French", "German", "Chinese", "Japanese", 
     "Russian", "Portuguese", "Italian", "Arabic", "Medieval Latin", "Koine Greek"
 ]
 selected_language = st.selectbox("🌐 Choose the book's language:", languages)
+
+# Generación automática de la tabla de contenido
+table_of_contents = generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, selected_language)
+st.subheader("📋 Table of Contents")
+st.text(table_of_contents)
+
+# Botón para regenerar la tabla de contenido
+if st.button("🔄 Regenerate Table of Contents"):
+    table_of_contents = generate_table_of_contents(topic, num_chapters, include_intro, include_conclusion, selected_language)
+    st.text(table_of_contents)
 
 # Estado de Streamlit para almacenar los capítulos generados
 if 'chapters' not in st.session_state:
@@ -226,41 +253,20 @@ if st.button("🚀 Generate Book"):
         st.stop()
     
     chapters = []
-    
-    # Generar introducción si está seleccionada
-    if include_intro:
-        st.write("⏳ Generating introduction...")
-        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_intro=True)
-        chapters.append(intro_content)
-        with st.expander("🌟 Introduction"):
-            st.write(intro_content)
-    
-    # Generar capítulos principales
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
         chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions)
-        word_count = len(chapter_content.split())  # Contar palabras
         chapters.append(chapter_content)
-        with st.expander(f" Chapter {i} ({word_count} words)"):
-            st.write(chapter_content)
         progress_bar.progress(i / num_chapters)
-    
-    # Generar conclusiones si están seleccionadas
-    if include_conclusion:
-        st.write("⏳ Generating conclusions...")
-        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_conclusion=True)
-        chapters.append(conclusion_content)
-        with st.expander("🔚 Conclusions"):
-            st.write(conclusion_content)
-    
+
     # Almacenar los capítulos en el estado de Streamlit
     st.session_state.chapters = chapters
 
 # Mostrar opciones de descarga si hay capítulos generados
 if st.session_state.chapters:
     st.subheader("⬇️ Download Options")
-    word_file = create_word_document(st.session_state.chapters, topic, author_name, author_bio, selected_language.lower())
+    word_file = create_word_document(st.session_state.chapters, topic, "", "", selected_language.lower(), table_of_contents)
 
     st.download_button(
         label="📥 Download in Word",
@@ -268,4 +274,3 @@ if st.session_state.chapters:
         file_name=f"{topic}.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
-
