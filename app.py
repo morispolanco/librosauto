@@ -198,8 +198,8 @@ instructions = st.text_area("📝 Special Instructions (optional):",
 num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
 
 # Opciones para introducción y conclusiones
-include_intro = st.checkbox("✅ Include Introduction", value=True)
-include_conclusion = st.checkbox("✅ Include Conclusions", value=True)
+include_intro = st.checkbox("Include Introduction", value=True)
+include_conclusion = st.checkbox("Include Conclusions", value=True)
 
 # Opciones adicionales
 author_name = st.text_input("🖋️ Author Name (optional):")
