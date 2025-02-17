@@ -14,6 +14,34 @@ def clean_markdown(text):
     text = re.sub(r'[#*_`]', '', text)  # Eliminar caracteres especiales de Markdown
     return text.strip()
 
+# Función para procesar listas y reemplazar guiones por rayas
+def process_lists(text):
+    """
+    Procesa el texto para:
+    1. Reemplazar guiones ('-') al inicio de las listas por rayas ('—').
+    2. Asegurar que después de las listas haya un salto de párrafo.
+    """
+    lines = text.split('\n')  # Dividir el texto en líneas
+    processed_lines = []
+    in_list = False  # Indicador para saber si estamos dentro de una lista
+
+    for line in lines:
+        stripped_line = line.strip()
+        if stripped_line.startswith('-'):  # Detectar líneas que comienzan con un guion
+            # Reemplazar el guion por una raya
+            processed_line = stripped_line.replace('-', '—', 1)
+            processed_lines.append(processed_line)
+            in_list = True
+        else:
+            if in_list:
+                # Si salimos de una lista, añadir un salto de párrafo
+                processed_lines.append("")  # Salto de párrafo
+                in_list = False
+            processed_lines.append(stripped_line)
+
+    # Unir las líneas procesadas con saltos de párrafo
+    return '\n\n'.join(processed_lines)
+
 # Función para aplicar reglas de capitalización según el idioma
 def format_title(title, language):
     """
@@ -136,7 +164,8 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.name = "Times New Roman"
 
         # Procesar el contenido del capítulo
-        paragraphs = chapter.split('\n\n')  # Dividir por párrafos (asumiendo doble espacio entre párrafos)
+        processed_chapter = process_lists(chapter)  # Procesar listas y reemplazar guiones por rayas
+        paragraphs = processed_chapter.split('\n\n')  # Dividir por párrafos
         for para_text in paragraphs:
             # Eliminar saltos de línea manuales dentro del párrafo
             para_text = para_text.replace('\n', ' ').strip()
