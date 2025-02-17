@@ -118,7 +118,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
 
     # Añadir perfil del autor si está proporcionado
     if author_bio:
-        bio_paragraph = doc.add_paragraph("author information")
+        bio_paragraph = doc.add_paragraph("Author Information")
         bio_paragraph.style = "Heading 2"
         bio_paragraph.runs[0].font.size = Pt(11)
         bio_paragraph.runs[0].font.name = "Times New Roman"
@@ -128,21 +128,23 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
         # Añadir encabezado del capítulo formateado según el idioma
-        chapter_title_text = f"chapter {i}" if language.lower() != "spanish" else f"capítulo {i}"
+        chapter_title_text = f"Chapter {i}" if language.lower() != "spanish" else f"Capítulo {i}"
         formatted_chapter_title = format_title(chapter_title_text, language)
         chapter_title = doc.add_paragraph(formatted_chapter_title)
         chapter_title.style = "Heading 1"
         chapter_title.runs[0].font.size = Pt(12)
         chapter_title.runs[0].font.name = "Times New Roman"
 
-        # Insertar el contenido del capítulo como un bloque continuo
-        paragraph = doc.add_paragraph(chapter.strip())  # Crear un nuevo párrafo
-        paragraph.style = "Normal"
-        paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
-        paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior de 0 puntos
-        for run in paragraph.runs:
-            run.font.size = Pt(11)
-            run.font.name = "Times New Roman"
+        # Insertar el contenido del capítulo como bloques de párrafos
+        paragraphs = chapter.split('\n\n')  # Dividir por párrafos (asumiendo doble espacio entre párrafos)
+        for para_text in paragraphs:
+            paragraph = doc.add_paragraph(para_text.strip())  # Crear un nuevo párrafo
+            paragraph.style = "Normal"
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
+            paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior entre párrafos
+            for run in paragraph.runs:
+                run.font.size = Pt(11)
+                run.font.name = "Times New Roman"
 
         doc.add_page_break()  # Salto de página entre capítulos
 
