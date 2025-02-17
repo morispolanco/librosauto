@@ -60,13 +60,13 @@ def format_title(title, language):
         return title.title()
 
 # Función para generar un capítulo
-def generate_chapter(api_key, topic, audience, chapter_number, language, table_of_contents="", is_intro=False, is_conclusion=False):
+def generate_chapter(api_key, topic, audience, chapter_number, language, table_of_contents="", specific_instructions="", is_intro=False, is_conclusion=False):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    # Construir el mensaje con la tabla de contenido
+    # Construir el mensaje con la tabla de contenido e instrucciones específicas
     if is_intro:
         message_content = f"Write the introduction of a book about {topic} aimed at {audience} with 500-800 words in {language}."
     elif is_conclusion:
@@ -76,6 +76,9 @@ def generate_chapter(api_key, topic, audience, chapter_number, language, table_o
     
     if table_of_contents:
         message_content += f" Use the following table of contents as a guide: {table_of_contents}"
+    
+    if specific_instructions:
+        message_content += f" Follow these specific instructions: {specific_instructions}"
     
     data = {
         "model": "qwen-turbo",
@@ -205,11 +208,12 @@ This application automatically generates non-fiction books in `.docx` format bas
 1. Enter the book's topic.
 2. Specify the target audience.
 3. Provide an optional table of contents.
-4. Select the number of chapters desired (maximum 20).
-5. Choose the book's language.
-6. Decide whether to include an introduction, conclusions, author name, and author profile.
-7. Click "Generate Book".
-8. Download the generated file.
+4. Write optional specific instructions.
+5. Select the number of chapters desired (maximum 20).
+6. Choose the book's language.
+7. Decide whether to include an introduction, conclusions, author name, and author profile.
+8. Click "Generate Book".
+9. Download the generated file.
 """)
 st.sidebar.markdown("""
 ---
@@ -230,7 +234,13 @@ audience = st.text_input("🎯 Target Audience:")
 # Campo para la tabla de contenido optativa
 table_of_contents = st.text_area(
     "📚 Optional Table of Contents:", 
-    placeholder="If you provide a table of contents (chapters with sections), the chapters will be longer."
+    placeholder="If you provide a table of contents with sections, the chapters will be longer."
+)
+
+# Campo para instrucciones específicas optativas
+specific_instructions = st.text_area(
+    "📝 Optional Specific Instructions:", 
+    placeholder="Provide specific instructions for the book (e.g., tone, style, key points to include)."
 )
 
 num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
@@ -268,7 +278,7 @@ if st.button("🚀 Generate Book"):
     # Generar introducción si está seleccionada
     if include_intro:
         st.write("⏳ Generating introduction...")
-        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, is_intro=True)
+        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, specific_instructions, is_intro=True)
         chapters.append(intro_content)
         with st.expander("🌟 Introduction"):
             st.write(intro_content)
@@ -277,7 +287,7 @@ if st.button("🚀 Generate Book"):
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
-        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), table_of_contents)
+        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), table_of_contents, specific_instructions)
         word_count = len(chapter_content.split())   # Contar palabras
         chapters.append(chapter_content)
         with st.expander(f" Chapter {i} ({word_count} words)"):
@@ -287,7 +297,7 @@ if st.button("🚀 Generate Book"):
     # Generar conclusiones si están seleccionadas
     if include_conclusion:
         st.write("⏳ Generating conclusions...")
-        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, is_conclusion=True)
+        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, specific_instructions, is_conclusion=True)
         chapters.append(conclusion_content)
         with st.expander("🔚 Conclusions"):
             st.write(conclusion_content)
