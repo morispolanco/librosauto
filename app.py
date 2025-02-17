@@ -234,7 +234,7 @@ audience = st.text_input("🎯 Target Audience:")
 # Campo para la tabla de contenido optativa
 table_of_contents = st.text_area(
     "📚 Optional Table of Contents:", 
-    placeholder="If you provide a table of contents with sections, the chapters will be longer."
+    placeholder="If you provide a table of contents (chapters with sections), the chapters will be longer."
 )
 
 # Campo para instrucciones específicas optativas
