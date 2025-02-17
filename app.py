@@ -60,13 +60,13 @@ def format_title(title, language):
         return title.title()
 
 # Función para generar un capítulo
-def generate_chapter(api_key, topic, audience, chapter_number, language, instructions="", is_intro=False, is_conclusion=False):
+def generate_chapter(api_key, topic, audience, chapter_number, language, table_of_contents="", is_intro=False, is_conclusion=False):
     url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    # Construir el mensaje con las instrucciones especiales
+    # Construir el mensaje con la tabla de contenido
     if is_intro:
         message_content = f"Write the introduction of a book about {topic} aimed at {audience} with 500-800 words in {language}."
     elif is_conclusion:
@@ -74,8 +74,8 @@ def generate_chapter(api_key, topic, audience, chapter_number, language, instruc
     else:
         message_content = f"Write chapter {chapter_number} of a book about {topic} aimed at {audience} with 2000-2500 words in {language}."
     
-    if instructions:
-        message_content += f" Additional instructions: {instructions}"
+    if table_of_contents:
+        message_content += f" Use the following table of contents as a guide: {table_of_contents}"
     
     data = {
         "model": "qwen-turbo",
@@ -164,7 +164,8 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.name = "Times New Roman"
 
         # Procesar el contenido del capítulo
-        paragraphs = chapter.split('\n\n')  # Dividir por párrafos (asumiendo doble espacio entre párrafos)
+        processed_chapter = process_lists(chapter)  # Procesar listas y reemplazar guiones por rayas
+        paragraphs = processed_chapter.split('\n\n')  # Dividir por párrafos
         for para_text in paragraphs:
             # Eliminar saltos de línea manuales dentro del párrafo
             para_text = para_text.replace('\n', ' ').strip()
@@ -186,7 +187,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     doc.save(buffer)
     buffer.seek(0)
     return buffer
-    
+
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Automatic Book Generator",
@@ -203,7 +204,7 @@ This application automatically generates non-fiction books in `.docx` format bas
 **Steps to use it:**
 1. Enter the book's topic.
 2. Specify the target audience.
-3. Write special instructions (optional).
+3. Provide an optional table of contents.
 4. Select the number of chapters desired (maximum 20).
 5. Choose the book's language.
 6. Decide whether to include an introduction, conclusions, author name, and author profile.
@@ -225,8 +226,13 @@ api_key = st.secrets["DASHSCOPE_API_KEY"]
 # Entradas del usuario
 topic = st.text_input("📒 Book Topic:")
 audience = st.text_input("🎯 Target Audience:")
-instructions = st.text_area("📝 Special Instructions (optional):", 
-                             placeholder="Example: Use a formal tone, include practical examples, avoid technical jargon...")
+
+# Campo para la tabla de contenido optativa
+table_of_contents = st.text_area(
+    "📚 Optional Table of Contents:", 
+    placeholder="If you provide a table of contents (chapters with sections), the chapters will be longer."
+)
+
 num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
 
 # Opciones para introducción y conclusiones
@@ -235,8 +241,10 @@ include_conclusion = st.checkbox("Include Conclusions", value=True)
 
 # Opciones adicionales
 author_name = st.text_input("🖋️ Author Name (optional):")
-author_bio = st.text_area("👤 Author Profile (optional):", 
-                          placeholder="Example: Brief professional description or biography.")
+author_bio = st.text_area(
+    "👤 Author Profile (optional):", 
+    placeholder="Example: Brief professional description or biography."
+)
 
 # Menú desplegable para elegir el idioma
 languages = [
@@ -260,7 +268,7 @@ if st.button("🚀 Generate Book"):
     # Generar introducción si está seleccionada
     if include_intro:
         st.write("⏳ Generating introduction...")
-        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_intro=True)
+        intro_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, is_intro=True)
         chapters.append(intro_content)
         with st.expander("🌟 Introduction"):
             st.write(intro_content)
@@ -269,7 +277,7 @@ if st.button("🚀 Generate Book"):
     progress_bar = st.progress(0)
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
-        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions)
+        chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), table_of_contents)
         word_count = len(chapter_content.split())   # Contar palabras
         chapters.append(chapter_content)
         with st.expander(f" Chapter {i} ({word_count} words)"):
@@ -279,7 +287,7 @@ if st.button("🚀 Generate Book"):
     # Generar conclusiones si están seleccionadas
     if include_conclusion:
         st.write("⏳ Generating conclusions...")
-        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), instructions, is_conclusion=True)
+        conclusion_content = generate_chapter(api_key, topic, audience, 0, selected_language.lower(), table_of_contents, is_conclusion=True)
         chapters.append(conclusion_content)
         with st.expander("🔚 Conclusions"):
             st.write(conclusion_content)
