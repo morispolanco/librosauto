@@ -164,8 +164,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.name = "Times New Roman"
 
         # Procesar el contenido del capítulo
-        processed_chapter = process_lists(chapter)  # Procesar listas y reemplazar guiones por rayas
-        paragraphs = processed_chapter.split('\n\n')  # Dividir por párrafos
+        paragraphs = chapter.split('\n\n')  # Dividir por párrafos (asumiendo doble espacio entre párrafos)
         for para_text in paragraphs:
             # Eliminar saltos de línea manuales dentro del párrafo
             para_text = para_text.replace('\n', ' ').strip()
@@ -187,7 +186,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     doc.save(buffer)
     buffer.seek(0)
     return buffer
-
+    
 # Configuración de Streamlit
 st.set_page_config(
     page_title="Automatic Book Generator",
