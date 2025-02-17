@@ -141,7 +141,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
             paragraph = doc.add_paragraph(para_text.strip())  # Crear un nuevo párrafo
             paragraph.style = "Normal"
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
-            paragraph.paragraph_format.space_after = Pt(0)  # Espaciado posterior entre párrafos
+            paragraph.paragraph_format.space_after = Pt(6)  # Espaciado posterior entre párrafos
             for run in paragraph.runs:
                 run.font.size = Pt(11)
                 run.font.name = "Times New Roman"
