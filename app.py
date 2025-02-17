@@ -135,10 +135,12 @@ def create_word_document(chapters, title, author_name, author_bio, language):
         chapter_title.runs[0].font.size = Pt(12)
         chapter_title.runs[0].font.name = "Times New Roman"
 
-        # Insertar el contenido del capítulo como bloques de párrafos
+        # Procesar el contenido del capítulo
         paragraphs = chapter.split('\n\n')  # Dividir por párrafos (asumiendo doble espacio entre párrafos)
         for para_text in paragraphs:
-            paragraph = doc.add_paragraph(para_text.strip())  # Crear un nuevo párrafo
+            # Eliminar saltos de línea manuales dentro del párrafo
+            para_text = para_text.replace('\n', ' ').strip()
+            paragraph = doc.add_paragraph(para_text)  # Crear un nuevo párrafo
             paragraph.style = "Normal"
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Alineación justificada
             paragraph.paragraph_format.space_after = Pt(6)  # Espaciado posterior entre párrafos
