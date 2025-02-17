@@ -118,7 +118,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
 
     # Añadir perfil del autor si está proporcionado
     if author_bio:
-        bio_paragraph = doc.add_paragraph("Author Information")
+        bio_paragraph = doc.add_paragraph("author information")
         bio_paragraph.style = "Heading 2"
         bio_paragraph.runs[0].font.size = Pt(11)
         bio_paragraph.runs[0].font.name = "Times New Roman"
@@ -128,7 +128,7 @@ def create_word_document(chapters, title, author_name, author_bio, language):
     # Añadir capítulos
     for i, chapter in enumerate(chapters, 1):
         # Añadir encabezado del capítulo formateado según el idioma
-        chapter_title_text = f"Chapter {i}" if language.lower() != "spanish" else f"Capítulo {i}"
+        chapter_title_text = f"chapter {i}" if language.lower() != "spanish" else f"capítulo {i}"
         formatted_chapter_title = format_title(chapter_title_text, language)
         chapter_title = doc.add_paragraph(formatted_chapter_title)
         chapter_title.style = "Heading 1"
@@ -222,7 +222,7 @@ if st.button("🚀 Generate Book"):
     if not topic or not audience:
         st.error("Please enter a valid topic and target audience.")
         st.stop()
-    
+     
     chapters = []
     
     # Generar introducción si está seleccionada
@@ -238,7 +238,7 @@ if st.button("🚀 Generate Book"):
     for i in range(1, num_chapters + 1):
         st.write(f"⏳ Generating chapter {i}...")
         chapter_content = generate_chapter(api_key, topic, audience, i, selected_language.lower(), instructions)
-        word_count = len(chapter_content.split())  # Contar palabras
+        word_count = len(chapter_content.split())   # Contar palabras
         chapters.append(chapter_content)
         with st.expander(f" Chapter {i} ({word_count} words)"):
             st.write(chapter_content)
