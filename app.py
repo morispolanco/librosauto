@@ -209,7 +209,7 @@ This application automatically generates non-fiction books in `.docx` format bas
 2. Specify the target audience.
 3. Provide an optional table of contents.
 4. Write optional specific instructions.
-5. Select the number of chapters desired (maximum 20).
+5. Select the number of chapters desired (maximum 50).
 6. Choose the book's language.
 7. Decide whether to include an introduction, conclusions, author name, and author profile.
 8. Click "Generate Book".
@@ -243,7 +243,7 @@ specific_instructions = st.text_area(
     placeholder="Provide specific instructions for the book (e.g., tone, style, key points to include)."
 )
 
-num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=20, value=5)
+num_chapters = st.slider("🔢 Number of Chapters", min_value=1, max_value=50, value=5)
 
 # Opciones para introducción y conclusiones
 include_intro = st.checkbox("Include Introduction", value=True)
